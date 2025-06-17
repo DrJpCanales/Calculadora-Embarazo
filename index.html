@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Hitos del Embarazo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Customizing Tailwind with brand colors
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#f3e8ff', // Light lavender
+                            DEFAULT: '#6b46c1', // Primary purple from logo
+                            dark: '#4c3c6c', // Dark purple from logo
+                            darker: '#3c2b57'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f6fe; /* A very light purple */
+        }
+        .main-card {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .info-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1rem; /* Reduced padding for mobile */
+            text-align: center;
+        }
+        .input-form {
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-form:focus {
+            outline: none;
+            border-color: #6b46c1; /* brand.DEFAULT */
+            box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.3);
+        }
+        .tab {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .tab-active {
+            background-color: #6b46c1; /* brand.DEFAULT */
+            color: white;
+        }
+        .tab-inactive {
+            color: #6b46c1;
+            border-color: #6b46c1;
+        }
+        .table-header {
+            background-color: #f3e8ff; /* brand.light */
+            color: #4c3c6c; /* brand.dark */
+        }
+        .table-cell {
+            padding: 0.75rem 1rem; /* Adjusted padding for better mobile view */
+            text-align: left;
+            font-size: 0.875rem; /* Smaller font for table content on mobile */
+        }
+        @media (min-width: 640px) { /* sm breakpoint */
+            .info-box { padding: 1.5rem; }
+            .table-cell { padding: 0.75rem 1.5rem; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-2 sm:p-4">
+
+    <div class="w-full max-w-4xl mx-auto">
+        <div class="main-card p-4 sm:p-8">
+            <!-- Header -->
+            <div class="text-center mb-6 sm:mb-8">
+                <h1 class="text-2xl sm:text-3xl font-bold text-brand-darker">Calculadora de Hitos del Embarazo</h1>
+                <p class="mt-2 text-base sm:text-lg text-brand-dark font-semibold">del Programa de Acompañamiento Integral de la Gestación</p>
+            </div>
+
+            <!-- Calculation Mode Toggle -->
+            <div class="flex justify-center gap-2 sm:gap-4 p-1 bg-gray-100 rounded-lg mb-6">
+                <button id="tab-fur" class="tab tab-active w-1/2">Por Fecha de Última Regla</button>
+                <button id="tab-eco" class="tab tab-inactive w-1/2">Por Ecografía</button>
+            </div>
+            
+            <!-- Input Sections -->
+            <div id="calculator-inputs">
+                <!-- FUR Calculator -->
+                <div id="fur-calculator" class="flex flex-col items-center gap-2">
+                    <label for="lmp-date" class="text-base sm:text-lg font-medium text-gray-700">Fecha de Última Regla (FUR):</label>
+                    <input type="date" id="lmp-date" class="input-form w-full max-w-xs text-center sm:text-lg">
+                </div>
+                <!-- Ultrasound Calculator -->
+                <div id="eco-calculator" class="hidden flex flex-col items-center gap-4">
+                     <p class="text-base sm:text-lg font-medium text-gray-700 text-center">Edad Gestacional por Ecografía:</p>
+                     <div class="flex items-center justify-center gap-2 flex-wrap">
+                        <input type="number" id="eco-weeks" placeholder="Semanas" class="input-form w-24 text-center">
+                        <span class="font-medium">+</span>
+                        <input type="number" id="eco-days" placeholder="Días" class="input-form w-24 text-center" max="6" min="0">
+                        <label for="eco-date" class="font-medium">en fecha:</label>
+                        <input type="date" id="eco-date" class="input-form">
+                     </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-container" class="mt-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-8">
+                    <div id="fpp-container" class="info-box"></div>
+                    <div id="gestational-age-container" class="info-box"></div>
+                    <div id="fur-op-container" class="info-box hidden md:col-span-2"></div>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-semibold text-brand-dark mb-4 text-center">Hitos y Controles</h2>
+                <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                    <table class="min-w-full divide-y divide-gray-200"><thead class="table-header"><tr><th scope="col" class="table-cell font-semibold tracking-wider">Hito</th><th scope="col" class="table-cell font-semibold tracking-wider">Desde</th><th scope="col" class="table-cell font-semibold tracking-wider">Hasta</th></tr></thead><tbody id="results-body" class="bg-white divide-y divide-gray-200"></tbody></table>
+                </div>
+            </div>
+        </div>
+        <footer class="text-center mt-6 sm:mt-8 px-4"><div class="mb-6"><h3 class="font-semibold text-brand-dark text-base">Autores:</h3><div class="text-sm text-gray-500 flex flex-col items-center"><span>Dr. Juan Pablo Canales, Dr. Hans Mendoza</span><span>Mat. Paulette Parra, Mat. Camila Salinas</span><span>Mat. Scarlett Fuentes, Mat. Paulina Andana</span><span>Mat. Gabriel Villagrán</span></div></div><p class="text-xs text-gray-400">Esta calculadora proporciona fechas estimadas y no reemplaza el consejo médico profesional.</p></footer>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const tabFur = document.getElementById('tab-fur');
+        const tabEco = document.getElementById('tab-eco');
+        const furCalculator = document.getElementById('fur-calculator');
+        const ecoCalculator = document.getElementById('eco-calculator');
+        
+        const lmpDateInput = document.getElementById('lmp-date');
+        const ecoWeeksInput = document.getElementById('eco-weeks');
+        const ecoDaysInput = document.getElementById('eco-days');
+        const ecoDateInput = document.getElementById('eco-date');
+
+        const resultsBody = document.getElementById('results-body');
+        const fppContainer = document.getElementById('fpp-container');
+        const gestationalAgeContainer = document.getElementById('gestational-age-container');
+        const furOpContainer = document.getElementById('fur-op-container');
+        
+        let activeCalculator = 'fur';
+
+        // --- Milestones Definition ---
+        const milestones = [
+            { name: 'Ecografía Precoz', startWeeks: 7, endWeeks: 11 },
+            { name: 'Ecografía Doppler 11-14 semanas', startWeeks: 11, endWeeks: 14 },
+            { name: 'Ecografía Doppler 20-24 semanas', startWeeks: 20, endWeeks: 24 },
+            { name: '2da Rutina de Exámenes', startWeeks: 24, endWeeks: 28 },
+            { name: 'Vacuna contra el Coqueluche (Tos Ferina)', startWeeks: 28, fromOnly: true },
+            { name: 'Ecografía Doppler 30-34 semanas', startWeeks: 30, endWeeks: 34 },
+            { name: 'Inicio del Reposo Prenatal', startWeeks: 34, fromOnly: true },
+            { name: '3ra Rutina de Exámenes', startWeeks: 34, endWeeks: 36 },
+            { name: 'Cultivo del Estreptococo B', startWeeks: 36, fromOnly: true },
+            { name: 'Ecografía Obstétrica 38-40 semanas', startWeeks: 38, endWeeks: 40 }
+        ];
+
+        // --- Helper Functions ---
+        function addDays(date, days) {
+            const result = new Date(date);
+            result.setDate(result.getDate() + days);
+            return result;
+        }
+
+        function formatDate(date) {
+            if (!date || isNaN(date)) return 'N/A';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+        
+        const toUTCDate = (dateString) => {
+            const date = new Date(dateString);
+            return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+        }
+
+        // --- Display Functions ---
+        function displayFormattedGestationalAge(baseLmpDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (!baseLmpDate || baseLmpDate > today) {
+                gestationalAgeContainer.innerHTML = `<p class="text-base font-medium text-gray-700">Edad Gestacional Actual</p><p class="text-2xl sm:text-3xl font-bold text-gray-500">-</p>`;
+                return;
+            }
+
+            const diffTime = Math.abs(today - baseLmpDate);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            const weeks = Math.floor(diffDays / 7);
+            const days = diffDays % 7;
+
+            gestationalAgeContainer.innerHTML = `<p class="text-base font-medium text-gray-700">Edad Gestacional Actual</p><p class="text-2xl sm:text-3xl font-bold text-brand-DEFAULT">${weeks} <span class="text-xl sm:text-2xl font-normal text-gray-600">${days}/7</span></p>`;
+        }
+
+        function displayFPP(baseLmpDate) {
+             if(!baseLmpDate) {
+                fppContainer.innerHTML = `<p class="text-base font-medium text-gray-700">Fecha Probable de Parto</p><p class="text-2xl sm:text-3xl font-bold text-gray-500">-</p>`;
+                return;
+             }
+             const fppDate = addDays(baseLmpDate, 280);
+             fppContainer.innerHTML = `<p class="text-base font-medium text-gray-700">Fecha Probable de Parto</p><p class="text-2xl sm:text-3xl font-bold text-brand-DEFAULT">${formatDate(fppDate)}</p>`;
+        }
+
+        function displayFurOperacional(baseLmpDate) {
+             if(!baseLmpDate) {
+                furOpContainer.innerHTML = '';
+                return;
+             }
+             furOpContainer.innerHTML = `<p class="text-base font-medium text-gray-700">Fecha Última Regla Operacional</p><p class="text-2xl sm:text-3xl font-bold text-brand-DEFAULT">${formatDate(baseLmpDate)}</p>`;
+        }
+        
+        // --- Core Calculation Logic ---
+        function calculateAndDisplayResults() {
+            let baseLmpDate = null;
+
+            if (activeCalculator === 'fur') {
+                if (lmpDateInput.value) {
+                    baseLmpDate = toUTCDate(lmpDateInput.value);
+                }
+            } else { // activeCalculator === 'eco'
+                const weeks = parseInt(ecoWeeksInput.value, 10);
+                const days = parseInt(ecoDaysInput.value, 10);
+                const ecoDateValue = ecoDateInput.value;
+
+                if (!isNaN(weeks) && !isNaN(days) && ecoDateValue) {
+                    const measurementDate = toUTCDate(ecoDateValue);
+                    const totalGestationDays = (weeks * 7) + days;
+                    baseLmpDate = addDays(measurementDate, -totalGestationDays);
+                }
+            }
+
+            if (!baseLmpDate) {
+                resultsBody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-500">Por favor, ingresa los datos para calcular.</td></tr>`;
+                displayFPP(null);
+                displayFormattedGestationalAge(null);
+                displayFurOperacional(null);
+                return;
+            }
+            
+            displayFPP(baseLmpDate);
+            displayFormattedGestationalAge(baseLmpDate);
+            if (activeCalculator === 'eco') {
+                 displayFurOperacional(baseLmpDate);
+            }
+
+            let resultsHTML = '';
+            milestones.forEach(milestone => {
+                const startDate = addDays(baseLmpDate, milestone.startWeeks * 7);
+                let endDateText = milestone.fromOnly ? 'En adelante' : formatDate(addDays(baseLmpDate, milestone.endWeeks * 7));
+                
+                resultsHTML += `<tr class="hover:bg-gray-50"><td class="table-cell font-medium text-gray-800">${milestone.name}</td><td class="table-cell text-gray-600">${formatDate(startDate)}</td><td class="table-cell text-gray-600">${endDateText}</td></tr>`;
+            });
+
+            resultsBody.innerHTML = resultsHTML;
+        }
+        
+        // --- Event Listeners & Initial Setup ---
+        function switchTab(tab) {
+            if (tab === 'fur') {
+                activeCalculator = 'fur';
+                tabFur.classList.add('tab-active');
+                tabFur.classList.remove('tab-inactive');
+                tabEco.classList.add('tab-inactive');
+                tabEco.classList.remove('tab-active');
+                furCalculator.classList.remove('hidden');
+                ecoCalculator.classList.add('hidden');
+                furOpContainer.classList.add('hidden');
+            } else {
+                activeCalculator = 'eco';
+                tabEco.classList.add('tab-active');
+                tabEco.classList.remove('tab-inactive');
+                tabFur.classList.add('tab-inactive');
+                tabFur.classList.remove('tab-active');
+                ecoCalculator.classList.remove('hidden');
+                furCalculator.classList.add('hidden');
+                furOpContainer.classList.remove('hidden');
+            }
+            calculateAndDisplayResults();
+        }
+
+        tabFur.addEventListener('click', () => switchTab('fur'));
+        tabEco.addEventListener('click', () => switchTab('eco'));
+
+        [lmpDateInput, ecoWeeksInput, ecoDaysInput, ecoDateInput].forEach(input => {
+            input.addEventListener('input', calculateAndDisplayResults);
+        });
+        
+        // Set default date for inputs
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayString = `${year}-${month}-${day}`;
+        lmpDateInput.value = todayString;
+        ecoDateInput.value = todayString;
+
+        calculateAndDisplayResults();
+    </script>
+</body>
+</html>
+
